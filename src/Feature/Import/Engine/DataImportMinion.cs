@@ -3,7 +3,6 @@ using Microsoft.Extensions.Logging;
 using Sitecore.Commerce.Core;
 using System;
 using System.Text;
-using System.Threading;
 using System.Threading.Tasks;
 
 namespace Feature.Import.Engine
@@ -12,9 +11,9 @@ namespace Feature.Import.Engine
     {
         private CommerceCommander CommerceCommander { get; set; }
 
-        public override void Initialize(IServiceProvider serviceProvider, ILogger logger, MinionPolicy policy, CommerceEnvironment environment, CommerceContext globalContext)
+        public override void Initialize(IServiceProvider serviceProvider, MinionPolicy policy, CommerceContext commerceContext)
         {
-            base.Initialize(serviceProvider, logger, policy, environment, globalContext);
+            base.Initialize(serviceProvider, policy, commerceContext);
             CommerceCommander = serviceProvider.GetService<CommerceCommander>();
             LogInitialization();
         }
@@ -49,11 +48,6 @@ namespace Feature.Import.Engine
                 Logger.LogError($"{Name}-Error occured: {ex.Message}", ex);
                 throw;
             }
-        }
-
-        public override Task<MinionRunResultsModel> Run()
-        {
-            throw new NotImplementedException();
-        }
+        }        
     }
 }

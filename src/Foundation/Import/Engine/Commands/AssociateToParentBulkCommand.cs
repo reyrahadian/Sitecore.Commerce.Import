@@ -18,17 +18,28 @@ namespace Foundation.Import.Engine
             {
                 commerceContext.Logger.LogInformation($"Called - {nameof(AssociateToParentBulkCommand)}.");
 
+                // TODO:
+                // Depending on the amount of items in the associationList it might make sense to add some additional batching.
+                // When dealing with multiple batches, the context needs to be recreated to avoid transactional errors and performance issues due to too many messages.
+
+                // Need to clear message as any prior error will cause all transactions to abort.
+                commerceContext = new CommerceContext(commerceContext.Logger, commerceContext.TelemetryClient)
+                {
+                    GlobalEnvironment = commerceContext.GlobalEnvironment,
+                    Environment = commerceContext.Environment,
+                    Headers = commerceContext.Headers
+                };
+
+                var listsEntitiesArgument = new ListsEntitiesArgument();
                 foreach (var association in associationList)
                 {
-                    // Need to clear message as any prior error will cause all transactions to abort.
-                    commerceContext.ClearMessages();
+                    var relationshipType = Command<GetRelationshipTypeCommand>().Process(commerceContext, association.ParentId, association.ItemId);
+                    var listName = $"{relationshipType}-{association.ParentId.SimplifyEntityName()}";
 
-                    await PerformTransaction(commerceContext, async () =>
-                    {
-                        var relationshipType = Command<GetRelationshipTypeCommand>().Process(commerceContext, association.ParentId, association.ItemId);
-                        await Command<CreateRelationshipCommand>().Process(commerceContext, association.ParentId, association.ItemId, relationshipType);
-                    });
+                    listsEntitiesArgument.ListNamesAndEntityIds.TryAdd(listName, new List<string> { association.ItemId });
                 }
+
+                await Pipeline<IAddListsEntitiesPipeline>().Run(listsEntitiesArgument, commerceContext.PipelineContextOptions);
 
                 commerceContext.Logger.LogInformation($"Completed - {nameof(AssociateToParentBulkCommand)}.");
 

@@ -5,7 +5,7 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <PackageReference Include="Sitecore.Commerce.Plugin.Catalog" Version="3.0.*" />
+    <PackageReference Include="Sitecore.Commerce.Plugin.Catalog" Version="4.0.61" />
     <PackageReference Include="Sitecore.Commerce.Plugin.Inventory" Version="3.0.*" />
   </ItemGroup>
 

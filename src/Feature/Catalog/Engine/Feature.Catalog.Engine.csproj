@@ -6,8 +6,6 @@
   
   <ItemGroup>
     <PackageReference Include="CsvTextFieldParser" Version="1.1.1" />
-    <PackageReference Include="Sitecore.Commerce.Plugin.Catalog" Version="3.0.*" />
-    <PackageReference Include="Sitecore.Commerce.Plugin.SQL" Version="3.0.*" />
   </ItemGroup>
   
   <ItemGroup>

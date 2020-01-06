@@ -76,7 +76,7 @@ namespace Feature.Catalog.Engine
                             var importItems = await CommerceCommander.Command<TransformImportToSellableItemsCommand>().Process(context.CommerceContext, importRawLines);
                             var existingItems = await CommerceCommander.Command<GetSellableItemsBulkCommand>().Process(context.CommerceContext, importItems);
 
-                            var newItems = importItems.Except(existingItems, sellableItemComparerByProductId).ToList();
+                            var newItems = importItems.Except(existingItems, sellableItemComparerByProductId).Select(i => new PersistEntityArgument(i)).ToList();
                             var changedItems = existingItems.Except(importItems, sellableItemComparerByImportData).ToList();
 
                             await CommerceCommander.Command<CopyImportToSellableItemsCommand>().Process(context.CommerceContext, importItems, changedItems);
@@ -86,7 +86,14 @@ namespace Feature.Catalog.Engine
 
                             RemoveTransientData(importItems);
 
-                            await CommerceCommander.Command<PersistEntityBulkCommand>().Process(context.CommerceContext, newItems.Union(changedItems));
+                            // Add new items
+                            await CommerceCommander.Pipeline<IAddEntitiesPipeline>().Run(new PersistEntitiesArgument(newItems), context);
+
+                            // Update existing items
+                            await CommerceCommander.Pipeline<IUpdateEntitiesPipeline>().Run(new PersistEntitiesArgument(changedItems.Select(i => new PersistEntityArgument(i)).ToList()), context);
+
+                            // NOTE: One way to improve this could be to collect a bunch of relationships for a certain number of sellable items first and submit them in bulk after a while. We are doing something similar to this during the catalog import as well.
+
                             await CommerceCommander.Command<AssociateToParentBulkCommand>().Process(context.CommerceContext, associationsToCreate);
                             // TODO: Need to test the disassociate, haven't had time yet
                             await CommerceCommander.Command<DisassociateToParentBulkCommand>().Process(context.CommerceContext, associationsToRemove);
